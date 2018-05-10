@@ -1,0 +1,78 @@
+#coding:utf-8
+from numpy import *
+"""
+参考机器学习实战
+"""
+def loadDataSet():
+    postingList=[['a', 'dog', 'has', 'flea', 'problems', 'help', 'please'],
+                 ['maybe', 'not', 'take', 'him', 'to', 'dog', 'park', 'stupid'],
+                 ['my', 'dalmation', 'is', 'so', 'cute', 'I', 'love', 'him'],
+                 ['stop', 'posting', 'stupid', 'worthless', 'garbage'],
+                 ['mr', 'licks', 'ate', 'my', 'steak', 'how', 'to', 'stop', 'him'],
+                 ['quit', 'buying', 'worthless', 'dog', 'food', 'stupid']]
+    classVec = [0,1,0,1,0,1]    #1 is abusive, 0 not
+    return postingList,classVec
+
+def createVocabList(dataSet):
+    """统计所有出现的单词"""
+    vocabSet = set([])  #create empty set
+    for document in dataSet:
+        vocabSet = vocabSet | set(document) #union of the two sets
+    return list(vocabSet)
+
+def setOfWords2Vec(vocabList, inputSet):
+    returnVec = [0]*len(vocabList)
+    for word in inputSet:
+        if word in vocabList:
+            returnVec[vocabList.index(word)] = 1
+        else: print( "the word: %s is not in my Vocabulary!" % word)
+    return returnVec
+
+def trainNB(dataset,trainCategory):
+    ##将每条的数据信息 处理成向量形式
+    trainMatrix=list()
+    vocSumSet=createVocabList(dataset)
+    for datavec in dataset:
+        tmp=setOfWords2Vec(vocSumSet,datavec)
+        trainMatrix.append(tmp)
+    print(trainMatrix)
+    numTrainDocs = len(trainMatrix)
+    numWords = len(trainMatrix[0])
+    pAbusive = sum(trainCategory)/float(numTrainDocs)#计算垃圾信息数占总数的比例
+    #p0Num = zeros(numWords); p1Num = zeros(numWords)      #change to ones()
+    p0Num = ones(numWords); p1Num = ones(numWords)      #change to ones()
+    #初始化为1 加上了拉普拉斯平滑
+    p0Denom = 2.0; p1Denom = 2.0                        #change to 2.0
+    for i in range(numTrainDocs):
+        if trainCategory[i] == 1:
+            p1Num=add(p1Num,trainMatrix[i])     #p1Num += trainMatrix[i]#计算每一个单词出现的次数
+            p1Denom += sum(trainMatrix[i])#计算垃圾邮件中出现的单词的总次数（一共多少次）
+        else:
+            p0Num=add(p0Num,trainMatrix[i])#p0Num += trainMatrix[i]
+            print("p:",p0Num)
+            print("m:",trainMatrix[i])
+            p0Denom += sum(trainMatrix[i])
+    print("p1:",p1Num)
+    print("p0:",p0Num)
+    p1Vect = p1Num/p1Denom         #change to log()
+    p0Vect = p0Num/p0Denom        #change to log()
+    return p0Vect,p1Vect,pAbusive
+
+def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
+    p1 = sum(vec2Classify * p1Vec) + log(pClass1)    #element-wise mult
+    p0 = sum(vec2Classify * p0Vec) + log(1.0 - pClass1)
+    if p1 > p0:
+        return 1
+    else: 
+        return 0
+
+
+
+if __name__=='__main__':
+    data,label=loadDataSet()
+    vs=createVocabList(data)
+    dvec=setOfWords2Vec(vs,data[0])
+    x,y,z=trainNB1(data,label)
+    #print(vs)
+    #print(dvec)
+    print("x,y,z:",x,y,z)
